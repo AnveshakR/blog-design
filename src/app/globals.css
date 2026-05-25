@@ -1,26 +1,220 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+/* ── Catppuccin Mocha (dark) ─────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* base surfaces */
+  --nvim-bg:           #1e1e2e;
+  --nvim-surface:      #313244;
+  --nvim-codeblock:    #181825;
+  --nvim-overlay:      #45475a;
+  --nvim-selection:    #45475a;
+
+  /* text */
+  --nvim-text:         #cdd6f4;
+  --nvim-subtext:      #a6adc8;
+  --nvim-muted:        #6c7086;
+
+  /* syntax / ui colors */
+  --nvim-keyword:      #cba6f7;  /* mauve */
+  --nvim-func:         #89b4fa;  /* blue */
+  --nvim-string:       #a6e3a1;  /* green */
+  --nvim-number:       #fab387;  /* peach */
+  --nvim-type:         #89dceb;  /* sky */
+  --nvim-comment:      #6c7086;  /* overlay0 */
+  --nvim-link:         #89b4fa;  /* blue */
+  --nvim-accent:       #cba6f7;  /* mauve */
+
+  /* tree */
+  --nvim-folder:       #89b4fa;
+  --nvim-file:         #cdd6f4;
+  --nvim-icon:         #a6adc8;
+  --nvim-fold:         #6c7086;
+
+  /* heading levels */
+  --nvim-h1:           #cba6f7;
+  --nvim-h2:           #89b4fa;
+  --nvim-h3:           #89dceb;
+
+  /* inline code */
+  --nvim-inline-code:  #f38ba8;
+
+  /* bullet list marker */
+  --nvim-bullet:       #a6e3a1;
+
+  /* line numbers */
+  --nvim-lineno:       #45475a;
+
+  /* borders */
+  --nvim-border:       #313244;
+
+  /* tab bar */
+  --nvim-tabbar:       #181825;
+
+  /* status bar */
+  --nvim-statusbar:    #181825;
+  --nvim-statusborder: #313244;
+  --nvim-statustext:   #cdd6f4;
+  --nvim-mode-bg:      #cba6f7;
+  --nvim-mode-text:    #1e1e2e;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ── Catppuccin Latte (light) ────────────────────────────────────────────── */
+.light {
+  --nvim-bg:           #eff1f5;
+  --nvim-surface:      #e6e9ef;
+  --nvim-codeblock:    #dce0e8;
+  --nvim-overlay:      #ccd0da;
+  --nvim-selection:    #ccd0da;
+
+  --nvim-text:         #4c4f69;
+  --nvim-subtext:      #6c6f85;
+  --nvim-muted:        #9ca0b0;
+
+  --nvim-keyword:      #8839ef;
+  --nvim-func:         #1e66f5;
+  --nvim-string:       #40a02b;
+  --nvim-number:       #fe640b;
+  --nvim-type:         #04a5e5;
+  --nvim-comment:      #9ca0b0;
+  --nvim-link:         #1e66f5;
+  --nvim-accent:       #8839ef;
+
+  --nvim-folder:       #1e66f5;
+  --nvim-file:         #4c4f69;
+  --nvim-icon:         #6c6f85;
+  --nvim-fold:         #9ca0b0;
+
+  --nvim-h1:           #8839ef;
+  --nvim-h2:           #1e66f5;
+  --nvim-h3:           #04a5e5;
+
+  --nvim-inline-code:  #d20f39;
+  --nvim-bullet:       #40a02b;
+  --nvim-lineno:       #ccd0da;
+  --nvim-border:       #ccd0da;
+
+  --nvim-tabbar:       #dce0e8;
+  --nvim-statusbar:    #dce0e8;
+  --nvim-statusborder: #ccd0da;
+  --nvim-statustext:   #4c4f69;
+  --nvim-mode-bg:      #8839ef;
+  --nvim-mode-text:    #eff1f5;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── base ────────────────────────────────────────────────────────────────── */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--nvim-bg);
+  color: var(--nvim-text);
+  font-family: var(--font-mono), 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ── scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--nvim-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--nvim-overlay);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--nvim-muted);
+}
+
+/* ── tailwind custom colors via CSS vars ─────────────────────────────────── */
+@layer utilities {
+  .bg-nvim-bg         { background-color: var(--nvim-bg); }
+  .bg-nvim-surface    { background-color: var(--nvim-surface); }
+  .bg-nvim-codeblock  { background-color: var(--nvim-codeblock); }
+  .bg-nvim-selection  { background-color: var(--nvim-selection); }
+  .bg-nvim-tabbar     { background-color: var(--nvim-tabbar); }
+  .bg-nvim-statusbar  { background-color: var(--nvim-statusbar); }
+  .bg-nvim-mode-bg    { background-color: var(--nvim-mode-bg); }
+
+  .text-nvim-text        { color: var(--nvim-text); }
+  .text-nvim-subtext     { color: var(--nvim-subtext); }
+  .text-nvim-muted       { color: var(--nvim-muted); }
+  .text-nvim-keyword     { color: var(--nvim-keyword); }
+  .text-nvim-func        { color: var(--nvim-func); }
+  .text-nvim-string      { color: var(--nvim-string); }
+  .text-nvim-number      { color: var(--nvim-number); }
+  .text-nvim-type        { color: var(--nvim-type); }
+  .text-nvim-comment     { color: var(--nvim-comment); }
+  .text-nvim-link        { color: var(--nvim-link); }
+  .text-nvim-accent      { color: var(--nvim-accent); }
+  .text-nvim-folder      { color: var(--nvim-folder); }
+  .text-nvim-file        { color: var(--nvim-file); }
+  .text-nvim-icon        { color: var(--nvim-icon); }
+  .text-nvim-fold        { color: var(--nvim-fold); }
+  .text-nvim-lineno      { color: var(--nvim-lineno); }
+  .text-nvim-h1          { color: var(--nvim-h1); }
+  .text-nvim-h2          { color: var(--nvim-h2); }
+  .text-nvim-h3          { color: var(--nvim-h3); }
+  .text-nvim-inline-code { color: var(--nvim-inline-code); }
+  .text-nvim-bullet      { color: var(--nvim-bullet); }
+  .text-nvim-statustext  { color: var(--nvim-statustext); }
+  .text-nvim-mode-text   { color: var(--nvim-mode-text); }
+  .text-nvim-statusborder { color: var(--nvim-statusborder); }
+
+  .border-nvim-border     { border-color: var(--nvim-border); }
+  .border-nvim-statusborder { border-color: var(--nvim-statusborder); }
+  .border-nvim-accent     { border-color: var(--nvim-accent); }
+}
+
+/* ── highlight.js syntax theme (Catppuccin-aligned) ─────────────────────── */
+.hljs                     { color: var(--nvim-text); background: transparent; }
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in,
+.hljs-literal             { color: var(--nvim-keyword); }
+.hljs-title,
+.hljs-title.function_     { color: var(--nvim-func); }
+.hljs-string,
+.hljs-attr,
+.hljs-attribute           { color: var(--nvim-string); }
+.hljs-number,
+.hljs-regexp,
+.hljs-literal             { color: var(--nvim-number); }
+.hljs-type,
+.hljs-class .hljs-title   { color: var(--nvim-type); }
+.hljs-comment             { color: var(--nvim-comment); font-style: italic; }
+.hljs-meta                { color: var(--nvim-muted); }
+.hljs-variable,
+.hljs-params              { color: var(--nvim-text); }
+.hljs-symbol,
+.hljs-punctuation         { color: var(--nvim-subtext); }
+.hljs-deletion            { color: var(--nvim-inline-code); }
+.hljs-addition            { color: var(--nvim-string); }
+
+/* ── prose markdown styles ───────────────────────────────────────────────── */
+.prose-nvim {
+  color: var(--nvim-text);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.prose-nvim strong {
+  color: var(--nvim-text);
+  font-weight: 700;
+}
+
+.prose-nvim em {
+  color: var(--nvim-subtext);
+  font-style: italic;
 }
