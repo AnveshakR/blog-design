@@ -54,8 +54,13 @@ function buildTree(items: GithubTreeItem[]): FileNode[] {
   const root: FileNode[] = [];
   const map = new Map<string, FileNode>();
 
+  // filter out hidden paths (any segment starting with ".")
+  const visible = items.filter(
+    (item) => !item.path.split("/").some((seg) => seg.startsWith("."))
+  );
+
   // create all nodes
-  for (const item of items) {
+  for (const item of visible) {
     const name = item.path.split("/").pop()!;
     const node: FileNode = {
       name,
@@ -67,7 +72,7 @@ function buildTree(items: GithubTreeItem[]): FileNode[] {
   }
 
   // build tree
-  for (const item of items) {
+  for (const item of visible) {
     const node = map.get(item.path)!;
     const parentPath = item.path.split("/").slice(0, -1).join("/");
     if (parentPath && map.has(parentPath)) {
