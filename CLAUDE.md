@@ -31,7 +31,7 @@ src/
 │   ├── page.tsx                # renders about.md as homepage
 │   ├── globals.css             # Catppuccin CSS variables + Tailwind layers
 │   └── [...slug]/page.tsx      # catch-all route for all other markdown files
-│   └── api/image/route.ts      # serves images from ./content/images/ locally
+│   └── api/image/[...path]/route.ts  # serves images by path — local fs or GitHub API
 ├── components/
 │   ├── EditorLayout.tsx        # outer shell: sidebar + main pane
 │   ├── FileTree.tsx            # ASCII tree file explorer (neo-tree style)
@@ -61,8 +61,10 @@ content/                        # dummy content (local dev only)
 
 ### File tree
 - ASCII connectors: `├──`, `└──`, `│` — no arrow indicators
+- Only `.md` / `.mdx` files are shown; image files and directories containing no markdown are pruned
 - Clicking a directory toggles expand/collapse
 - Clicking a file opens it as a new tab (does not replace existing)
+- Sidebar is collapsed by default on mobile (< 768px); a `›` toggle strip on the left opens it
 
 ### Tabs
 - Open tabs persist in `localStorage` across page navigations
@@ -80,16 +82,18 @@ content/                        # dummy content (local dev only)
 - Pressing `:` enters COMMAND mode — a command line appears above the status bar, status pill changes to `COMMAND`
 - Escape cancels; Enter executes; Backspace on empty buffer exits command mode
 - `q` in normal mode while in RAW view switches back to RENDERED (no colon needed)
-- Built-in commands: `:w` → raw view, `:q` → rendered view, `:wq` → raw view
+- Built-in commands: `:w` → raw view, `:q` → rendered view, `:wq` → raw view, `:w!` → E212 error, `:set wrap` / `:set nowrap` → toggle line wrapping in RAW view
 - Add or override commands in `src/lib/commands.ts` — each entry maps a string to `(ctx: CommandContext) => void`
+- `CommandContext` provides: `viewMode`, `setViewMode`, `showWarning`, `wrap`, `setWrap`
 - Unknown commands show `E492: Not an editor command: <cmd>` as a warning
 - Readonly warning displays as a compact red box above the status bar; command line uses the status bar's styling
 
 ### Images in markdown
 - External URLs (http/https) used as-is
-- Relative paths (e.g. `../images/foo.svg`) resolved through `/api/image?path=...`
-- The API route (`src/app/api/image/route.ts`) serves files from `./content/` with path traversal protection
-- In production, images should live in the content repo and be fetched via the GitHub API (same token as content) — reference them with a relative path like `../images/foo.png` and the renderer resolves them through `/api/image`; that API route will need updating for production to use the GitHub API instead of `fs`
+- Relative paths (e.g. `../images/foo.svg`) are pre-normalized (resolving `../`) and served via `/api/image/<normalized-path>`
+- The API route (`src/app/api/image/[...path]/route.ts`) serves files from `./content/` locally or via the GitHub API in production — switching is automatic based on `GITHUB_REPO` env var
+- Path-based URLs (not query params) are used deliberately so mobile browsers (Safari) cache each image as a distinct resource
+- Add `?display=inline-block` to any image path to render it inline with surrounding text: `![](../images/icon.png?display=inline-block)`
 
 ### Content repo conventions
 - `welcome.md` at the root maps to `/` (homepage) — this file is hardcoded and must always be present
