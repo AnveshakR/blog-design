@@ -58,6 +58,12 @@
   --nvim-statustext:   #cdd6f4;
   --nvim-mode-bg:      #cba6f7;
   --nvim-mode-text:    #1e1e2e;
+
+  /* cursor / warning */
+  --nvim-cursorline:   #2a2b3d;
+  --nvim-warning:      #f9e2af;
+  --nvim-error-bg:     #f38ba8;
+  --nvim-error-text:   #1e1e2e;
 }
 
 /* ── Catppuccin Latte (light) ────────────────────────────────────────────── */
@@ -101,6 +107,11 @@
   --nvim-statustext:   #4c4f69;
   --nvim-mode-bg:      #8839ef;
   --nvim-mode-text:    #eff1f5;
+
+  --nvim-cursorline:   #e0e2ef;
+  --nvim-warning:      #df8e1d;
+  --nvim-error-bg:     #d20f39;
+  --nvim-error-text:   #eff1f5;
 }
 
 /* ── base ────────────────────────────────────────────────────────────────── */
@@ -175,6 +186,11 @@ body {
   .border-nvim-border     { border-color: var(--nvim-border); }
   .border-nvim-statusborder { border-color: var(--nvim-statusborder); }
   .border-nvim-accent     { border-color: var(--nvim-accent); }
+
+  .bg-nvim-cursorline    { background-color: var(--nvim-cursorline); }
+  .text-nvim-warning     { color: var(--nvim-warning); }
+  .bg-nvim-error         { background-color: var(--nvim-error-bg); }
+  .text-nvim-error       { color: var(--nvim-error-text); }
 }
 
 /* ── highlight.js syntax theme (Catppuccin-aligned) ─────────────────────── */
@@ -217,4 +233,18 @@ body {
 .prose-nvim em {
   color: var(--nvim-subtext);
   font-style: italic;
+}
+
+/* ── vim cursor ──────────────────────────────────────────────────────────── */
+@keyframes vim-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.vim-cursor {
+  display: inline-block;
+  min-width: 0.6em;
+  background-color: var(--nvim-text);
+  color: var(--nvim-bg);
+  animation: vim-blink 1s step-start infinite;
 }

@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import rehypeSlug from "rehype-slug";
-import Image from "next/image";
 import { TabBar } from "./TabBar";
 import { StatusBar } from "./StatusBar";
 
@@ -14,27 +13,52 @@ interface MarkdownRendererProps {
   filePath: string;
 }
 
-function LineNumbers({ count }: { count: number }) {
+function LineNumbers({ count, cursorLine }: { count: number; cursorLine: number }) {
   return (
-    <div className="select-none text-right text-nvim-lineno text-[13px] font-mono leading-6 pr-3 pl-2 shrink-0 border-r border-nvim-border min-w-[3rem]">
+    <div className="select-none text-right text-[13px] font-mono leading-6 pr-3 pl-2 shrink-0 border-r border-nvim-border min-w-[3rem]">
       {Array.from({ length: count }, (_, i) => (
-        <div key={i + 1}>{i + 1}</div>
+        <div key={i + 1} className={i === cursorLine ? "text-nvim-text font-bold" : "text-nvim-lineno"}>
+          {i + 1}
+        </div>
       ))}
     </div>
   );
 }
 
-function RawView({ raw }: { raw: string }) {
+function RawView({
+  raw,
+  cursorLine,
+  cursorCol,
+}: {
+  raw: string;
+  cursorLine: number;
+  cursorCol: number;
+}) {
   const lines = raw.split("\n");
   return (
     <div className="flex flex-1 overflow-auto">
-      <LineNumbers count={lines.length} />
-      <pre className="flex-1 p-4 text-[13px] font-mono leading-6 text-nvim-text overflow-auto whitespace-pre-wrap break-words">
-        {lines.map((line, i) => (
-          <div key={i} className="leading-6">
-            {line || " "}
-          </div>
-        ))}
+      <LineNumbers count={lines.length} cursorLine={cursorLine} />
+      <pre className="flex-1 p-4 text-[13px] font-mono leading-6 text-nvim-text whitespace-pre-wrap break-words">
+        {lines.map((line, i) => {
+          if (i !== cursorLine) {
+            return (
+              <div key={i} className="leading-6">
+                {line || " "}
+              </div>
+            );
+          }
+          const col = Math.min(cursorCol, line.length);
+          const before = line.slice(0, col);
+          const cursorChar = line[col] !== undefined ? line[col] : " ";
+          const after = line.slice(col + 1);
+          return (
+            <div key={i} className="leading-6 bg-nvim-cursorline">
+              <span>{before}</span>
+              <span className="vim-cursor">{cursorChar}</span>
+              <span>{after}</span>
+            </div>
+          );
+        })}
       </pre>
     </div>
   );
@@ -52,7 +76,6 @@ function RenderedView({ body, filePath }: { body: string; filePath: string }) {
           components={{
             img({ src, alt }) {
               if (!src || typeof src !== "string") return null;
-              // resolve relative image paths
               const resolvedSrc =
                 src.startsWith("http") || src.startsWith("/")
                   ? src
@@ -133,23 +156,23 @@ function RenderedView({ body, filePath }: { body: string; filePath: string }) {
                 </blockquote>
               );
             },
-            h1({ children }) {
+            h1({ children, id }) {
               return (
-                <h1 className="text-2xl font-bold font-mono text-nvim-h1 mt-6 mb-3 border-b border-nvim-border pb-2">
+                <h1 id={id} className="text-2xl font-bold font-mono text-nvim-h1 mt-6 mb-3 border-b border-nvim-border pb-2">
                   {children}
                 </h1>
               );
             },
-            h2({ children }) {
+            h2({ children, id }) {
               return (
-                <h2 className="text-xl font-bold font-mono text-nvim-h2 mt-5 mb-2">
+                <h2 id={id} className="text-xl font-bold font-mono text-nvim-h2 mt-5 mb-2">
                   {children}
                 </h2>
               );
             },
-            h3({ children }) {
+            h3({ children, id }) {
               return (
-                <h3 className="text-lg font-semibold font-mono text-nvim-h3 mt-4 mb-2">
+                <h3 id={id} className="text-lg font-semibold font-mono text-nvim-h3 mt-4 mb-2">
                   {children}
                 </h3>
               );
@@ -163,9 +186,7 @@ function RenderedView({ body, filePath }: { body: string; filePath: string }) {
             },
             ul({ children }) {
               return (
-                <ul className="my-3 ml-4 space-y-1 list-none">
-                  {children}
-                </ul>
+                <ul className="my-3 ml-4 space-y-1 list-none">{children}</ul>
               );
             },
             ol({ children }) {
@@ -197,31 +218,103 @@ function RenderedView({ body, filePath }: { body: string; filePath: string }) {
 
 export function MarkdownRenderer({ raw, filePath }: MarkdownRendererProps) {
   const [viewMode, setViewMode] = useState<"rendered" | "raw">("rendered");
+  const [cursorLine, setCursorLine] = useState(0);
+  const [cursorCol, setCursorCol] = useState(0);
+  const [warning, setWarning] = useState<string | null>(null);
+  const warnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const toggleView = useCallback(() => {
     setViewMode((v) => (v === "rendered" ? "raw" : "rendered"));
   }, []);
 
-  const lineCount = raw.split("\n").length;
-
-  // strip frontmatter from body for rendered view
+  const lines = raw.split("\n");
+  const lineCount = lines.length;
   const body = raw.replace(/^---[\s\S]*?---\n?/, "");
 
+  // Clamp col to new line length when line changes
+  useEffect(() => {
+    const lineLen = (raw.split("\n")[cursorLine] ?? "").length;
+    setCursorCol((c) => Math.min(c, lineLen));
+  }, [cursorLine, raw]);
+
+  // Reset cursor to top when file changes
+  useEffect(() => {
+    setCursorLine(0);
+    setCursorCol(0);
+  }, [filePath]);
+
+  const showWarning = useCallback((msg: string) => {
+    setWarning(msg);
+    if (warnTimerRef.current) clearTimeout(warnTimerRef.current);
+    warnTimerRef.current = setTimeout(() => setWarning(null), 4000);
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const currentLines = raw.split("\n");
+
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault();
+          setCursorLine((l) => Math.max(0, l - 1));
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          setCursorLine((l) => Math.min(currentLines.length - 1, l + 1));
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          setCursorCol((c) => Math.max(0, c - 1));
+          break;
+        case "ArrowRight": {
+          e.preventDefault();
+          const lineLen = (currentLines[cursorLine] ?? "").length;
+          setCursorCol((c) => Math.min(lineLen, c + 1));
+          break;
+        }
+        default:
+          if (
+            e.key.length === 1 ||
+            e.key === "Enter" ||
+            e.key === "Backspace" ||
+            e.key === "Delete"
+          ) {
+            e.preventDefault();
+            showWarning("E45: 'readonly' option is set (add ! to override)");
+          }
+      }
+    },
+    [raw, cursorLine, showWarning]
+  );
+
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, [filePath]);
+
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+    <div
+      ref={containerRef}
+      className="flex flex-col flex-1 min-h-0 overflow-hidden outline-none"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+    >
       <TabBar viewMode={viewMode} onToggleView={toggleView} />
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         {viewMode === "raw" ? (
-          <RawView raw={raw} />
+          <RawView raw={raw} cursorLine={cursorLine} cursorCol={cursorCol} />
         ) : (
           <RenderedView body={body} filePath={filePath} />
         )}
       </div>
-      <StatusBar
-        filePath={filePath}
-        viewMode={viewMode}
-        lineCount={lineCount}
-      />
+      {warning && (
+        <div className="flex shrink-0 px-2 py-1">
+          <span className="px-2 py-0.5 bg-nvim-error text-nvim-error text-[12px] font-mono">
+            {warning}
+          </span>
+        </div>
+      )}
+      <StatusBar filePath={filePath} viewMode={viewMode} lineCount={lineCount} />
     </div>
   );
 }
