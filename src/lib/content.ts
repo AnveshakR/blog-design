@@ -9,25 +9,27 @@ const CONTENT_DIR = path.join(process.cwd(), "content");
 
 function readLocalTree(dir: string, basePath = ""): FileNode[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
-  return entries
-    .filter((e) => !e.name.startsWith("."))
-    .filter((e) => e.isDirectory() || e.name.endsWith(".md") || e.name.endsWith(".mdx"))
-    .sort((a, b) => {
-      if (a.isDirectory() && !b.isDirectory()) return -1;
-      if (!a.isDirectory() && b.isDirectory()) return 1;
-      return a.name.localeCompare(b.name);
-    })
-    .map((entry) => {
-      const entryPath = basePath ? `${basePath}/${entry.name}` : entry.name;
-      return {
-        name: entry.name,
-        path: entryPath,
-        type: entry.isDirectory() ? "dir" : "file",
-        children: entry.isDirectory()
-          ? readLocalTree(path.join(dir, entry.name), entryPath)
-          : undefined,
-      };
-    });
+  const nodes: FileNode[] = [];
+
+  for (const entry of entries) {
+    if (entry.name.startsWith(".")) continue;
+    const entryPath = basePath ? `${basePath}/${entry.name}` : entry.name;
+
+    if (entry.isDirectory()) {
+      const children = readLocalTree(path.join(dir, entry.name), entryPath);
+      if (children.length > 0) {
+        nodes.push({ name: entry.name, path: entryPath, type: "dir", children });
+      }
+    } else if (entry.name.endsWith(".md") || entry.name.endsWith(".mdx")) {
+      nodes.push({ name: entry.name, path: entryPath, type: "file" });
+    }
+  }
+
+  return nodes.sort((a, b) => {
+    if (a.type === "dir" && b.type !== "dir") return -1;
+    if (a.type !== "dir" && b.type === "dir") return 1;
+    return a.name.localeCompare(b.name);
+  });
 }
 
 function readLocalContent(filePath: string): FileContent {
@@ -84,20 +86,22 @@ function buildTree(items: GithubTreeItem[]): FileNode[] {
     }
   }
 
-  // sort each level: dirs first, then alphabetical
-  function sortChildren(nodes: FileNode[]) {
-    nodes.sort((a, b) => {
-      if (a.type === "dir" && b.type !== "dir") return -1;
-      if (a.type !== "dir" && b.type === "dir") return 1;
-      return a.name.localeCompare(b.name);
-    });
-    for (const node of nodes) {
-      if (node.children) sortChildren(node.children);
-    }
+  // prune dirs with no markdown descendants, sort remaining
+  function pruneAndSort(nodes: FileNode[]): FileNode[] {
+    return nodes
+      .filter((node) => {
+        if (node.type === "file") return true;
+        node.children = pruneAndSort(node.children ?? []);
+        return node.children.length > 0;
+      })
+      .sort((a, b) => {
+        if (a.type === "dir" && b.type !== "dir") return -1;
+        if (a.type !== "dir" && b.type === "dir") return 1;
+        return a.name.localeCompare(b.name);
+      });
   }
-  sortChildren(root);
 
-  return root;
+  return pruneAndSort(root);
 }
 
 async function fetchGithubTree(): Promise<FileNode[]> {
