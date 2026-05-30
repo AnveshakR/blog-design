@@ -81,20 +81,19 @@ function RenderedView({ body, filePath }: { body: string; filePath: string }) {
           components={{
             img({ src, alt }) {
               if (!src || typeof src !== "string") return null;
+              const isInline = /[?&]display=inline(-block)?(\b|$)/.test(src);
+              const cleanSrc = src.replace(/([?&])display=inline(-block)?(&|$)/, (_m, pre, _d, post) =>
+                post === "&" ? pre : ""
+              ).replace(/[?&]$/, "");
               const resolvedSrc =
-                src.startsWith("http") || src.startsWith("/")
-                  ? src
-                  : `/api/image?path=${baseDir ? `${baseDir}/` : ""}${src}`;
-              return (
-                <span className="block my-4">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={resolvedSrc}
-                    alt={alt ?? ""}
-                    className="rounded border border-nvim-border max-w-full"
-                  />
-                </span>
-              );
+                cleanSrc.startsWith("http") || cleanSrc.startsWith("/")
+                  ? cleanSrc
+                  : `/api/image?path=${baseDir ? `${baseDir}/` : ""}${cleanSrc}`;
+              // eslint-disable-next-line @next/next/no-img-element
+              const imgEl = <img src={resolvedSrc} alt={alt ?? ""} className="rounded border border-nvim-border max-w-full" />;
+              return isInline
+                ? <span className="inline-block align-middle mx-1">{imgEl}</span>
+                : <span className="block my-4">{imgEl}</span>;
             },
             a({ href, children }) {
               const isExternal = href?.startsWith("http");
