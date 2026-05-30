@@ -20,4 +20,6 @@ export interface CommandContext {
   viewMode: "rendered" | "raw";
   setViewMode: (mode: "rendered" | "raw") => void;
   showWarning: (msg: string) => void;
+  wrap: boolean;
+  setWrap: (wrap: boolean) => void;
 }

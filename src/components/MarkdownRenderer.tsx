@@ -14,53 +14,57 @@ interface MarkdownRendererProps {
   filePath: string;
 }
 
-function LineNumbers({ count, cursorLine }: { count: number; cursorLine: number }) {
-  return (
-    <div className="select-none text-right text-[13px] font-mono leading-6 pr-3 pl-2 shrink-0 border-r border-nvim-border min-w-[3rem]">
-      {Array.from({ length: count }, (_, i) => (
-        <div key={i + 1} className={i === cursorLine ? "text-nvim-text font-bold" : "text-nvim-lineno"}>
-          {i + 1}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function RawView({
   raw,
   cursorLine,
   cursorCol,
+  wrap,
 }: {
   raw: string;
   cursorLine: number;
   cursorCol: number;
+  wrap: boolean;
 }) {
   const lines = raw.split("\n");
   return (
-    <div className="flex flex-1 overflow-auto">
-      <LineNumbers count={lines.length} cursorLine={cursorLine} />
-      <pre className="flex-1 p-4 text-[13px] font-mono leading-6 text-nvim-text whitespace-pre-wrap break-words">
+    <div className="flex-1 overflow-auto">
+      <div className={`pt-4 pb-4 text-[13px] font-mono leading-6 text-nvim-text ${wrap ? "" : "min-w-max"}`}>
         {lines.map((line, i) => {
+          const numEl = (
+            <div className={`select-none text-right shrink-0 w-[3rem] pr-3 pl-2 border-r border-nvim-border ${
+              i === cursorLine ? "text-nvim-text font-bold" : "text-nvim-lineno"
+            }`}>
+              {i + 1}
+            </div>
+          );
+
           if (i !== cursorLine) {
             return (
-              <div key={i} className="leading-6">
-                {line || " "}
+              <div key={i} className="flex leading-6">
+                {numEl}
+                <span className={`pl-4 ${wrap ? "whitespace-pre-wrap break-words min-w-0 flex-1" : "whitespace-pre"}`}>
+                  {line || " "}
+                </span>
               </div>
             );
           }
+
           const col = Math.min(cursorCol, line.length);
           const before = line.slice(0, col);
-          const cursorChar = line[col] !== undefined ? line[col] : " ";
+          const cursorChar = line[col] ?? " ";
           const after = line.slice(col + 1);
           return (
-            <div key={i} className="leading-6 bg-nvim-cursorline">
-              <span>{before}</span>
-              <span className="vim-cursor">{cursorChar}</span>
-              <span>{after}</span>
+            <div key={i} className="flex leading-6 bg-nvim-cursorline">
+              {numEl}
+              <span className={`pl-4 ${wrap ? "whitespace-pre-wrap break-words min-w-0 flex-1" : "whitespace-pre"}`}>
+                {before}
+                <span className="vim-cursor">{cursorChar}</span>
+                {after}
+              </span>
             </div>
           );
         })}
-      </pre>
+      </div>
     </div>
   );
 }
@@ -224,6 +228,7 @@ export function MarkdownRenderer({ raw, filePath }: MarkdownRendererProps) {
   const [warning, setWarning] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<"normal" | "command">("normal");
   const [commandBuffer, setCommandBuffer] = useState("");
+  const [wrap, setWrap] = useState(false);
   const warnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -258,12 +263,12 @@ export function MarkdownRenderer({ raw, filePath }: MarkdownRendererProps) {
       const trimmed = cmd.trim();
       const handler = builtinCommands[trimmed];
       if (handler) {
-        handler({ viewMode, setViewMode, showWarning });
+        handler({ viewMode, setViewMode, showWarning, wrap, setWrap });
       } else if (trimmed) {
         showWarning(`E492: Not an editor command: ${trimmed}`);
       }
     },
-    [viewMode, showWarning]
+    [viewMode, showWarning, wrap, setWrap]
   );
 
   const handleKeyDown = useCallback(
@@ -347,7 +352,7 @@ export function MarkdownRenderer({ raw, filePath }: MarkdownRendererProps) {
       <TabBar viewMode={viewMode} onToggleView={toggleView} />
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         {viewMode === "raw" ? (
-          <RawView raw={raw} cursorLine={cursorLine} cursorCol={cursorCol} />
+          <RawView raw={raw} cursorLine={cursorLine} cursorCol={cursorCol} wrap={wrap} />
         ) : (
           <RenderedView body={body} filePath={filePath} />
         )}
