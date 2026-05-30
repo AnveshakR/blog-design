@@ -42,7 +42,8 @@ src/
 │   └── ThemeProvider.tsx       # dark/light toggle, persisted in localStorage
 └── lib/
     ├── content.ts              # getFileTree() + getFileContent() — fs or GitHub API
-    └── types.ts                # FileNode, FileContent, BreadcrumbSegment
+    ├── commands.ts             # user-configurable vim command map
+    └── types.ts                # FileNode, FileContent, BreadcrumbSegment, CommandContext
 content/                        # dummy content (local dev only)
 ├── images/                     # images referenced by markdown files
 ├── about.md                    # rendered at /
@@ -72,6 +73,17 @@ content/                        # dummy content (local dev only)
 - "RENDERED": react-markdown with remark-gfm + rehype-highlight (Catppuccin syntax colors)
 - "RAW": source markdown with line numbers
 - Toggle button in the tab bar, top-right
+
+### Vim cursor and command mode
+- A blinking block cursor is shown in RAW view at the exact character position (line + col)
+- Arrow keys move the cursor; any printable/edit key shows a readonly warning above the status bar
+- Pressing `:` enters COMMAND mode — a command line appears above the status bar, status pill changes to `COMMAND`
+- Escape cancels; Enter executes; Backspace on empty buffer exits command mode
+- `q` in normal mode while in RAW view switches back to RENDERED (no colon needed)
+- Built-in commands: `:w` → raw view, `:q` → rendered view, `:wq` → raw view
+- Add or override commands in `src/lib/commands.ts` — each entry maps a string to `(ctx: CommandContext) => void`
+- Unknown commands show `E492: Not an editor command: <cmd>` as a warning
+- Readonly warning displays as a compact red box above the status bar; command line uses the status bar's styling
 
 ### Images in markdown
 - External URLs (http/https) used as-is

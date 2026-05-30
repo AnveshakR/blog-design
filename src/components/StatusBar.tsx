@@ -4,9 +4,10 @@ interface StatusBarProps {
   filePath: string;
   viewMode: "rendered" | "raw";
   lineCount?: number;
+  editorMode?: "normal" | "command";
 }
 
-export function StatusBar({ filePath, viewMode, lineCount }: StatusBarProps) {
+export function StatusBar({ filePath, viewMode, lineCount, editorMode = "normal" }: StatusBarProps) {
   const parts = filePath ? filePath.split("/") : [];
   const filename = parts.pop() || "index.md";
   const dir = parts.join("/");
@@ -15,7 +16,7 @@ export function StatusBar({ filePath, viewMode, lineCount }: StatusBarProps) {
     <div className="flex items-center h-6 px-0 shrink-0 bg-nvim-statusbar border-t border-nvim-statusborder text-[12px] font-mono text-nvim-statustext">
       {/* mode pill */}
       <span className="px-3 h-full flex items-center bg-nvim-mode-bg text-nvim-mode-text font-bold tracking-wider">
-        NORMAL
+        {editorMode === "command" ? "COMMAND" : "NORMAL"}
       </span>
 
       {/* separator */}

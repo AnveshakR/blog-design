@@ -7,6 +7,7 @@ import rehypeHighlight from "rehype-highlight";
 import rehypeSlug from "rehype-slug";
 import { TabBar } from "./TabBar";
 import { StatusBar } from "./StatusBar";
+import { commands as builtinCommands } from "@/lib/commands";
 
 interface MarkdownRendererProps {
   raw: string;
@@ -221,6 +222,8 @@ export function MarkdownRenderer({ raw, filePath }: MarkdownRendererProps) {
   const [cursorLine, setCursorLine] = useState(0);
   const [cursorCol, setCursorCol] = useState(0);
   const [warning, setWarning] = useState<string | null>(null);
+  const [editorMode, setEditorMode] = useState<"normal" | "command">("normal");
+  const [commandBuffer, setCommandBuffer] = useState("");
   const warnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -250,11 +253,53 @@ export function MarkdownRenderer({ raw, filePath }: MarkdownRendererProps) {
     warnTimerRef.current = setTimeout(() => setWarning(null), 4000);
   }, []);
 
+  const executeCommand = useCallback(
+    (cmd: string) => {
+      const trimmed = cmd.trim();
+      const handler = builtinCommands[trimmed];
+      if (handler) {
+        handler({ viewMode, setViewMode, showWarning });
+      } else if (trimmed) {
+        showWarning(`E492: Not an editor command: ${trimmed}`);
+      }
+    },
+    [viewMode, showWarning]
+  );
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      const currentLines = raw.split("\n");
+      if (editorMode === "command") {
+        e.preventDefault();
+        if (e.key === "Escape") {
+          setEditorMode("normal");
+          setCommandBuffer("");
+        } else if (e.key === "Enter") {
+          executeCommand(commandBuffer);
+          setEditorMode("normal");
+          setCommandBuffer("");
+        } else if (e.key === "Backspace") {
+          setCommandBuffer((buf) => {
+            if (buf.length === 0) { setEditorMode("normal"); return ""; }
+            return buf.slice(0, -1);
+          });
+        } else if (e.key.length === 1) {
+          setCommandBuffer((buf) => buf + e.key);
+        }
+        return;
+      }
 
+      // Normal mode
+      const currentLines = raw.split("\n");
       switch (e.key) {
+        case ":":
+          e.preventDefault();
+          setEditorMode("command");
+          setCommandBuffer("");
+          break;
+        case "q":
+          e.preventDefault();
+          if (viewMode === "raw") setViewMode("rendered");
+          break;
         case "ArrowUp":
           e.preventDefault();
           setCursorLine((l) => Math.max(0, l - 1));
@@ -285,7 +330,7 @@ export function MarkdownRenderer({ raw, filePath }: MarkdownRendererProps) {
           }
       }
     },
-    [raw, cursorLine, showWarning]
+    [editorMode, commandBuffer, executeCommand, raw, cursorLine, viewMode, showWarning]
   );
 
   useEffect(() => {
@@ -307,14 +352,20 @@ export function MarkdownRenderer({ raw, filePath }: MarkdownRendererProps) {
           <RenderedView body={body} filePath={filePath} />
         )}
       </div>
-      {warning && (
+      {editorMode === "command" && (
+        <div className="flex items-center h-6 px-2 bg-nvim-statusbar border-t border-nvim-statusborder text-[12px] font-mono shrink-0">
+          <span className="text-nvim-text">:{commandBuffer}</span>
+          <span className="vim-cursor"> </span>
+        </div>
+      )}
+      {warning && editorMode === "normal" && (
         <div className="flex shrink-0 px-2 py-1">
           <span className="px-2 py-0.5 bg-nvim-error text-nvim-error text-[12px] font-mono">
             {warning}
           </span>
         </div>
       )}
-      <StatusBar filePath={filePath} viewMode={viewMode} lineCount={lineCount} />
+      <StatusBar filePath={filePath} viewMode={viewMode} lineCount={lineCount} editorMode={editorMode} />
     </div>
   );
 }

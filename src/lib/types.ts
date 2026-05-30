@@ -15,3 +15,9 @@ export interface BreadcrumbSegment {
   name: string;
   path: string;
 }
+
+export interface CommandContext {
+  viewMode: "rendered" | "raw";
+  setViewMode: (mode: "rendered" | "raw") => void;
+  showWarning: (msg: string) => void;
+}
