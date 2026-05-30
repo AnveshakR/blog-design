@@ -31,12 +31,12 @@ export function StatusBar({ filePath, viewMode, lineCount, editorMode = "normal"
       {/* right side — never shrinks */}
       <div className="flex items-center shrink-0">
         <span className="px-3 text-nvim-subtext">{viewMode.toUpperCase()}</span>
-        <span className="text-nvim-statusborder px-1">│</span>
-        <span className="px-2 text-nvim-subtext">MARKDOWN</span>
+        <span className="hidden sm:inline text-nvim-statusborder px-1">│</span>
+        <span className="hidden sm:inline px-2 text-nvim-subtext">MARKDOWN</span>
         <span className="text-nvim-statusborder px-1">│</span>
         <span className="px-2 text-nvim-subtext">{lineCount ?? 0}L</span>
-        <span className="text-nvim-statusborder px-1">│</span>
-        <span className="px-3 text-nvim-subtext">utf-8</span>
+        <span className="hidden sm:inline text-nvim-statusborder px-1">│</span>
+        <span className="hidden sm:inline px-3 text-nvim-subtext">utf-8</span>
       </div>
     </div>
   );
