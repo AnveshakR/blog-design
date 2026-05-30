@@ -11,8 +11,8 @@ function readLocalTree(dir: string, basePath = ""): FileNode[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   return entries
     .filter((e) => !e.name.startsWith("."))
+    .filter((e) => e.isDirectory() || e.name.endsWith(".md") || e.name.endsWith(".mdx"))
     .sort((a, b) => {
-      // dirs before files, then alphabetical
       if (a.isDirectory() && !b.isDirectory()) return -1;
       if (!a.isDirectory() && b.isDirectory()) return 1;
       return a.name.localeCompare(b.name);
@@ -54,10 +54,12 @@ function buildTree(items: GithubTreeItem[]): FileNode[] {
   const root: FileNode[] = [];
   const map = new Map<string, FileNode>();
 
-  // filter out hidden paths (any segment starting with ".")
-  const visible = items.filter(
-    (item) => !item.path.split("/").some((seg) => seg.startsWith("."))
-  );
+  // filter out hidden paths and non-markdown files
+  const visible = items.filter((item) => {
+    if (item.path.split("/").some((seg) => seg.startsWith("."))) return false;
+    if (item.type === "blob") return item.path.endsWith(".md") || item.path.endsWith(".mdx");
+    return true;
+  });
 
   // create all nodes
   for (const item of visible) {
