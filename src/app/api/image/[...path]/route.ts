@@ -63,13 +63,12 @@ function fromLocal(filePath: string): NextResponse {
   }
 }
 
-export async function GET(request: NextRequest) {
-  const rawPath = request.nextUrl.searchParams.get("path");
-  if (!rawPath) return new NextResponse("missing path", { status: 400 });
-
-  // Normalize away .. segments and guard against traversal above root
-  const filePath = path.posix.normalize(rawPath);
-  if (filePath.startsWith("..")) {
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: { path: string[] } }
+) {
+  const filePath = params.path.join("/");
+  if (filePath.includes("..")) {
     return new NextResponse("forbidden", { status: 403 });
   }
 

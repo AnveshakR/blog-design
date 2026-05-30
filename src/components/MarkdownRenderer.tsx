@@ -69,6 +69,15 @@ function RawView({
   );
 }
 
+function normalizeImagePath(raw: string): string {
+  const parts: string[] = [];
+  for (const seg of raw.split("/")) {
+    if (seg === "..") parts.pop();
+    else if (seg && seg !== ".") parts.push(seg);
+  }
+  return parts.join("/");
+}
+
 function RenderedView({ body, filePath }: { body: string; filePath: string }) {
   const baseDir = filePath.split("/").slice(0, -1).join("/");
 
@@ -88,7 +97,7 @@ function RenderedView({ body, filePath }: { body: string; filePath: string }) {
               const resolvedSrc =
                 cleanSrc.startsWith("http") || cleanSrc.startsWith("/")
                   ? cleanSrc
-                  : `/api/image?path=${baseDir ? `${baseDir}/` : ""}${cleanSrc}`;
+                  : `/api/image/${normalizeImagePath(baseDir ? `${baseDir}/${cleanSrc}` : cleanSrc)}`;
               // eslint-disable-next-line @next/next/no-img-element
               const imgEl = <img src={resolvedSrc} alt={alt ?? ""} className="rounded border border-nvim-border max-w-full" />;
               return isInline

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileTree } from "./FileTree";
 import type { FileNode } from "@/lib/types";
 
@@ -11,7 +11,11 @@ interface EditorLayoutProps {
 }
 
 export function EditorLayout({ tree, currentPath, children }: EditorLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (window.innerWidth >= 768) setSidebarOpen(true);
+  }, []);
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-nvim-bg">
