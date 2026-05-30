@@ -20,25 +20,24 @@ export function StatusBar({ filePath, viewMode, lineCount, editorMode = "normal"
       </span>
 
       {/* separator */}
-      <span className="px-2 text-nvim-statusborder">›</span>
+      <span className="px-2 text-nvim-statusborder shrink-0">›</span>
 
-      {/* path */}
-      <span className="text-nvim-subtext">
-        {dir ? `${dir}/` : ""}
-      </span>
-      <span className="text-nvim-statustext">{filename}</span>
+      {/* path — truncates on narrow screens */}
+      <div className="min-w-0 flex-1 truncate">
+        <span className="text-nvim-subtext">{dir ? `${dir}/` : ""}</span>
+        <span className="text-nvim-statustext">{filename}</span>
+      </div>
 
-      {/* spacer */}
-      <div className="flex-1" />
-
-      {/* right side */}
-      <span className="px-3 text-nvim-subtext">{viewMode.toUpperCase()}</span>
-      <span className="text-nvim-statusborder px-1">│</span>
-      <span className="px-2 text-nvim-subtext">MARKDOWN</span>
-      <span className="text-nvim-statusborder px-1">│</span>
-      <span className="px-2 text-nvim-subtext">{lineCount ?? 0}L</span>
-      <span className="text-nvim-statusborder px-1">│</span>
-      <span className="px-3 text-nvim-subtext">utf-8</span>
+      {/* right side — never shrinks */}
+      <div className="flex items-center shrink-0">
+        <span className="px-3 text-nvim-subtext">{viewMode.toUpperCase()}</span>
+        <span className="text-nvim-statusborder px-1">│</span>
+        <span className="px-2 text-nvim-subtext">MARKDOWN</span>
+        <span className="text-nvim-statusborder px-1">│</span>
+        <span className="px-2 text-nvim-subtext">{lineCount ?? 0}L</span>
+        <span className="text-nvim-statusborder px-1">│</span>
+        <span className="px-3 text-nvim-subtext">utf-8</span>
+      </div>
     </div>
   );
 }

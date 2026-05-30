@@ -39,7 +39,7 @@ async function fromGithub(filePath: string): Promise<NextResponse> {
   return new NextResponse(buffer, {
     headers: {
       "Content-Type": mime,
-      "Cache-Control": "public, max-age=3600",
+      "Cache-Control": "private, max-age=3600",
     },
   });
 }
@@ -55,7 +55,7 @@ function fromLocal(filePath: string): NextResponse {
     return new NextResponse(data, {
       headers: {
         "Content-Type": mime,
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": "private, max-age=3600",
       },
     });
   } catch {
